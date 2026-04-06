@@ -1,20 +1,20 @@
 // processPayment.js
-import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db.js";
 import { randomUUID } from "crypto";
 
 export const handler = async (event) => {
-    const { orderId } = event
+    const order = event
     const payment = {
         "paymentId": "",
-        "orderId": orderId,
+        "orderId": order.orderId,
         "status": "INITIATED",
         "attempts": 1,
         "updatedAt": new Date().toISOString()
     }
     const data = await db.send(new GetCommand({
         TableName: "Payments",
-        Key: { orderId }
+        Key: { orderId: order.orderId }
     }));
 
     if (data.Item) {
@@ -24,8 +24,10 @@ export const handler = async (event) => {
         payment.paymentId = randomUUID();
     }
 
-    if (Math.random() < 0.2) {
+    if (Math.random() < process.env.SUCCESS_PROBABILITTY) {
         payment.status = "SUCCESS"
+        order.status = "PAID"
+
     } else if (payment.attempts <= 3) {
         payment.status = "PENDING"
         await db.send(new PutCommand({
@@ -35,12 +37,43 @@ export const handler = async (event) => {
         throw new Error("Payment Failed")
     } else {
         payment.status = "FAILED"
+        order.status = "FAILED"
     }
 
-    await db.send(new PutCommand({
-        TableName: "Payments",
-        Item: payment
-    }))
+    await db.send(new TransactWriteCommand({
+        TransactItems: [
+            {
+                Update: {
+                    TableName: "Orders",
+                    Key: { orderId: order.orderId },
+                    UpdateExpression: "SET #status = :paid",
+                    ExpressionAttributeNames: {
+                        "#status": "status"
+                    },
+                    ExpressionAttributeValues: {
+                        ":paid": order.status
+                    }
+                }
+            },
+            {
+                Put: {
+                    TableName: "Payments",
+                    Item: payment
+                }
+            },
+            ...(payment.status == "SUCCESS" && order.products.map(({ productId, quantity }) => ({
+                Update: {
+                    TableName: "Products",
+                    Key: { productId },
+                    UpdateExpression: "SET stock = stock - :qty",
+                    ConditionExpression: "stock >= :qty",
+                    ExpressionAttributeValues: {
+                        ":qty": quantity
+                    }
+                }
+            })))
+        ]
+    }));
 
     return {
         statusCode: 200,
