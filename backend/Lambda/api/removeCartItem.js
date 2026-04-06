@@ -1,5 +1,5 @@
 // removeCartItem.js
-import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db.js";
 
 export const handler = async (event) => {
@@ -7,7 +7,7 @@ export const handler = async (event) => {
     const { productId } = event.pathParameters;
 
     const cartData = await db.send(new GetCommand({
-        TableName: "Carts",
+        TableName: "Cart",
         Key: { userId }
     }));
 
@@ -15,18 +15,27 @@ export const handler = async (event) => {
         return { statusCode: 404, body: "Cart not found" };
     }
 
-    const updatedItems = cartData.Item.items.filter(
-        item => item.productId !== productId
-    );
+    delete cartData.Item.articles[productId]
+
+    console.log(cartData.Item.articles)
+
+    if (Object.keys(cartData.Item.articles).length == 0) {
+        await db.send(new DeleteCommand({
+            TableName: "Cart",
+            Key: { userId }
+        }));
+        return {
+            statusCode: 204,
+        };
+    }
 
     const updatedCart = {
         ...cartData.Item,
-        items: updatedItems,
         updatedAt: new Date().toISOString()
     };
 
     await db.send(new PutCommand({
-        TableName: "Carts",
+        TableName: "Cart",
         Item: updatedCart
     }));
 

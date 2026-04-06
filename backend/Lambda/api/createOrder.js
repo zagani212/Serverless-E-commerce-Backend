@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 
 export const handler = async (event) => {
     const userId = event.headers["x-user-id"];
+    let ERROR = ""
 
     const cart = await db.send(new GetCommand({
         TableName: "Cart",
@@ -21,36 +22,50 @@ export const handler = async (event) => {
     const productsPrice = await db.send(new BatchGetCommand({
         RequestItems: {
             Products: {
-                Keys: cart.Item.map(item => ({ productId: item.productId })),
-                ProjectionExpression: "productId, price",
+                Keys: Object.keys(cart.Item.articles).map(id => ({ productId: id })),
+                ProjectionExpression: "productId, price, stock",
             },
         },
     }));
 
-    const products = productsPrice.Item.map((product) => ({
-        "productId": product.productId,
-        "quantity": cart.Item.articles[product.productId],
-        "priceAtPurchase": product.price
-    }))
+    let totalPrice = 0
+    const products = productsPrice.Responses.Products.map((product) => {
+        if (product.stock < cart.Item.articles[product.productId]) {
+            ERROR = "NOT_ENOUGHT_STOCK"
+            return
+        }
+        let qty = cart.Item.articles[product.productId]
+        totalPrice += product.price * qty
+        return {
+            "productId": product.productId,
+            "quantity": qty,
+            "priceAtPurchase": product.price
+        }
+    })
+
+    if (ERROR == "NOT_ENOUGHT_STOCK") {
+        return {
+            statusCode: 404,
+            body: JSON.stringify({ error: `not enought items in stock for some products` })
+        }
+    }
 
     const order = {
         orderId: randomUUID(),
         userId: userId,
         products: products,
-        totalPrice: productsPrice.Item.reduce((accumulator, currentValue) => accumulator + currentValue, 0),
+        totalPrice: totalPrice,
         status: "PENDING",
         createdAt: new Date().toISOString()
     }
 
-    const command = new PutCommand({
+    await db.send(new PutCommand({
         TableName: "Orders",
         Item: order
-    })
+    }))
 
-    await db.send(command)
-
-    return response = {
+    return {
         statusCode: 200,
-        body: JSON.stringify(command.Item)
+        body: order
     };
 };

@@ -5,12 +5,14 @@ import { randomUUID } from "crypto";
 
 export const handler = async (event) => {
     const body = JSON.parse(event.body);
+
     if (!body.name || !body.price) {
         return {
             statusCode: 400,
             body: JSON.stringify({ error: "Name and price are required" })
         };
     }
+
     const product = {
         productId: randomUUID(),
         name: body.name,

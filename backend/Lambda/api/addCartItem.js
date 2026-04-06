@@ -1,5 +1,5 @@
 // addCartItem.js
-import { UpdateCommand } from "@aws-sdk/lib-dynamodb";
+import { UpdateCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { db } from "./db.js";
 
 export const handler = async (event) => {
@@ -12,11 +12,23 @@ export const handler = async (event) => {
     }
     const { productId, quantity } = JSON.parse(event.body);
 
+    const product = await db.send(new GetCommand({
+        TableName: "Products",
+        Key: { productId }
+    }));
+
+    if (!product.Item || product.Item.stock <= 0) {
+        return {
+            statusCode: 404,
+            body: JSON.stringify({ error: "Product not found or sold out" })
+        }
+    }
+
     await db.send(new UpdateCommand({
         TableName: "Cart",
         Key: { userId },
-        UpdateExpression: 'SET articles = if_not_exists(articles, :emptyMap)',
-        ExpressionAttributeValues: { ":emptyMap": {} }
+        UpdateExpression: 'SET articles = if_not_exists(articles, :emptyMap), expires_at = :expireTime',
+        ExpressionAttributeValues: { ":emptyMap": {}, ":expireTime": Math.floor(Date.now() / 1000) + (60 * 60) }
     }));
 
     const result = await db.send(

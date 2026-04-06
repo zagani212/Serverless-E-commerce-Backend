@@ -13,7 +13,7 @@ export const handler = async (event) => {
     }
 
     const data = await db.send(new GetCommand({
-        TableName: "Carts",
+        TableName: "Cart",
         Key: { userId }
     }));
 
