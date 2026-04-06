@@ -14,7 +14,7 @@ export const handler = async (event) => {
     }
 
     const product = {
-        productId: randomUUID(),
+        productId: body.productId ?? randomUUID(),
         name: body.name,
         description: body.description,
         price: body.price,
