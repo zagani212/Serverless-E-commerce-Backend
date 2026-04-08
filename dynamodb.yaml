@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Resources:
+  Users:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Users
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  Carts:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Carts
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+      TimeToLiveSpecification:
+          AttributeName: expires_at
+          Enabled: true
+  Orders:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Orders
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  Payments:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Payments
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: orderId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: orderId
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+  Products:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Products
+      BillingMode: PROVISIONED
+      AttributeDefinitions:
+        - AttributeName: productId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: productId
+          KeyType: HASH
+      ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+
+
+Outputs:
+  CartsArn:
+    Value: !GetAtt Carts.Arn
+    Export:
+      Name: CartsArn
+  OrdersArn:
+    Value: !GetAtt Orders.Arn
+    Export:
+      Name: OrdersArn
+  PaymentsArn:
+    Value: !GetAtt Payments.Arn
+    Export:
+      Name: PaymentsArn
+  ProductsArn:
+    Value: !GetAtt Products.Arn
+    Export:
+      Name: ProductsArn
+  UsersArn:
+    Value: !GetAtt Users.Arn
+    Export:
+      Name: UsersArn
