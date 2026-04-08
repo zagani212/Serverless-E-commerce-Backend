@@ -1,5 +1,8 @@
-import { GetCommand, PutCommand, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
-import { db } from "./db.js";
+import { GetCommand, PutCommand, TransactWriteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
+const client = new DynamoDBClient({ region: "eu-west-3" });
+const db = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
 
@@ -8,41 +11,56 @@ export const handler = async (event) => {
         Key: { orderId: event.body.orderId }
     }));
 
-
     try {
         await db.send(new TransactWriteCommand({
             TransactItems: [
-                order.products.map(({ productId, quantity }) => ({
-                    TransactItems: [
-                        {
-                            Update: {
-                                TableName: "Orders",
-                                Key: { orderId: order.orderId },
-                                UpdateExpression: "SET status = PAID",
-                            }
+                {
+                    Update: {
+                        TableName: "Orders",
+                        Key: { orderId: order.Item.orderId },
+                        UpdateExpression: "SET #status = :status",
+                        ExpressionAttributeNames: {
+                            "#status": "status"
                         },
-                        {
-                            Update: {
-                                TableName: "Payments",
-                                Key: { orderId: order.orderId },
-                                UpdateExpression: "SET status = SUCCESSED"
-                            }
+                        ExpressionAttributeValues: {
+                            ":status": "PAID"
+                        }
+                    }
+                },
+                {
+                    Update: {
+                        TableName: "Payments",
+                        Key: { orderId: order.Item.orderId },
+                        UpdateExpression: "SET #status = :status",
+                        ExpressionAttributeNames: {
+                            "#status": "status"
                         },
-                        {
-                            Update: {
-                                TableName: "Products",
-                                Key: { productId },
-                                UpdateExpression: "SET stock = stock - :qty",
-                                ConditionExpression: "stock >= :qty",
-                                ExpressionAttributeValues: {
-                                    ":qty": quantity
-                                }
-                            }
-                        }]
+                        ExpressionAttributeValues: {
+                            ":status": "SUCCEEDED"
+                        }
+                    }
+                },
+                {
+                    Delete: {
+                        TableName: "Cart",
+                        Key: { userId: order.Item.userId },
+                    }
+                },
+                ...order.Item.products.map(({ productId, quantity }) => ({
+                    Update: {
+                        TableName: "Products",
+                        Key: { productId },
+                        UpdateExpression: "SET stock = stock - :qty",
+                        ConditionExpression: "attribute_exists(stock) AND stock >= :qty",
+                        ExpressionAttributeValues: {
+                            ":qty": quantity
+                        }
+                    }
                 }))
             ]
         }))
     } catch (e) {
+        console.log(e)
         return { error: "Not enough stock" }
     }
 

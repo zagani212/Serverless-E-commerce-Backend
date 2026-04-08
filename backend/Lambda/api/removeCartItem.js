@@ -1,6 +1,13 @@
 // removeCartItem.js
-import { GetCommand, PutCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
-import { db } from "./db.js";
+import { GetCommand, PutCommand, DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
+const client = new DynamoDBClient({ region: "eu-west-3" });
+const db = DynamoDBDocumentClient.from(client);
+
+import AWSXRay from 'aws-xray-sdk';
+import aws from 'aws-sdk';
+const AWS = AWSXRay.captureAWS(aws);
 
 export const handler = async (event) => {
     const userId = event.headers["x-user-id"];

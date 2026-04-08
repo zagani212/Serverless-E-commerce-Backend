@@ -1,4 +1,5 @@
-import { DynamoDBClient, PutItemCommand } from "@aws-sdk/client-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({ region: "eu-west-3" });
 
@@ -7,19 +8,20 @@ export const handler = async (event) => {
         const { userName, request } = event;
 
         const attributes = request.userAttributes;
-        console.log(attributes)
         const userId = attributes.sub;
 
         const item = {
-            userId: { S: userId },
-            username: { S: userName },
-            email: { S: attributes.email },
-            createdAt: { S: new Date().toISOString() },
+            userId: userId,
+            username: userName,
+            email: attributes.email,
+            createdAt: new Date().toISOString(),
             isAdmin: false
         };
 
+        console.log(item);
+
         await client.send(
-            new PutItemCommand({
+            new PutCommand({
                 TableName: "Users",
                 Item: item
             })

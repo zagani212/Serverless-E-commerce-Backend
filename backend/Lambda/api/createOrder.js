@@ -1,6 +1,10 @@
 // createOrder.js
-import { PutCommand, GetCommand, BatchGetCommand } from "@aws-sdk/lib-dynamodb";
-import { db } from "./db.js";
+import { PutCommand, GetCommand, BatchGetCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+
+const client = new DynamoDBClient({ region: "eu-west-3" });
+const db = DynamoDBDocumentClient.from(client);
+
 import { randomUUID } from "crypto";
 
 export const handler = async (event) => {
