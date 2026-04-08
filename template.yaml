@@ -1,0 +1,304 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Parameters:
+  ProductsTable:
+    Type: String
+    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Products
+  CartTable:
+    Type: String
+    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Cart
+  OrdersTable:
+    Type: String
+    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Orders
+  PaymentsTable:
+    Type: String
+    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Payments
+  UsersTable:
+    Type: String
+    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Users
+  BucketArn:
+    Type: String
+    Default: arn:aws:s3:::abdelhak-e-commerce-products-images/*
+  StateMachine:
+    Type: String
+    Default: arn:aws:states:eu-west-3:775698064297:stateMachine:orderWorkflow
+
+Resources:
+
+  addCreateItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: addCartItem.handler
+      CodeUri: backend/Lambda/api/addCartItem.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref ProductsTable 
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref CartTable
+  processPayment:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: processPayment.handler
+      CodeUri: backend/Lambda/api/processPayment.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource: !Ref CartTable
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !Ref PaymentsTable
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref OrdersTable
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref ProductsTable
+  createOrder:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: createOrder.handler
+      CodeUri: backend/Lambda/api/createOrder.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref ProductsTable
+            - Effect: Allow
+              Action:
+                - dynamodb:BatchGetItem
+              Resource: !Ref ProductsTable
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Ref ProductsTable
+            - Effect: Allow
+              Action:
+                -  lambda:InvokeAsync
+              Resource: !GetAtt processPayment.Arn
+  createProduct:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: createProduct.handler
+      CodeUri: backend/Lambda/api/createProduct.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Ref ProductsTable
+            - Effect: Allow
+              Action:
+                - s3:PutObject
+              Resource: !Ref BucketArn
+  editUser:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: editUser.handler
+      CodeUri: backend/Lambda/api/editUser.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref UsersTable
+  fireWorkflow:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: fireWorkflow.handler
+      CodeUri: backend/Lambda/api/fireWorkflow.mjs
+      Tracing: Active
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !Ref StateMachine
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource: !Ref StateMachine
+  getAllProducts:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getAllProducts.handler
+      CodeUri: backend/Lambda/api/getAllProducts.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref CartTable
+  getCart:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getCart.handler
+      CodeUri: backend/Lambda/api/getCart.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref CartTable
+  getOrders:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getOrders.handler
+      CodeUri: backend/Lambda/api/getOrders.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !Ref OrdersTable
+  getProductById:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getProductById.handler
+      CodeUri: backend/Lambda/api/getProductById.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref ProductsTable
+  getUserById:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getUserById.handler
+      CodeUri: backend/Lambda/api/getUserById.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource: !Ref UsersTable
+  getUsers:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: getUsers.handler
+      CodeUri: backend/Lambda/api/getUsers.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Scan
+              Resource: !Ref UsersTable
+  inventoryUpdate:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: inventoryUpdate.handler
+      CodeUri: backend/Lambda/api/inventoryUpdate.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+              Resource: !Ref CartTable
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !Ref OrdersTable
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref ProductsTable
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource: !Ref PaymentsTable
+  removeCartItem:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: removeCartItem.handler
+      CodeUri: backend/Lambda/api/removeCartItem.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:DeleteItem
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+              Resource: !Ref CartTable
+  registerNewUsers:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: registerNewUsers.handler
+      CodeUri: backend/Lambda/registerNewUsers.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Ref UsersTable
+  authLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: index.handler
+      CodeUri: zip/auth-lambda.zip
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !Ref UsersTable
+            
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
