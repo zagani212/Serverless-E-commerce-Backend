@@ -1,21 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Parameters:
-  ProductsTable:
-    Type: String
-    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Products
-  CartTable:
-    Type: String
-    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Cart
-  OrdersTable:
-    Type: String
-    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Orders
-  PaymentsTable:
-    Type: String
-    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Payments
-  UsersTable:
-    Type: String
-    Default: arn:aws:dynamodb:eu-west-3:775698064297:table/Users
   BucketArn:
     Type: String
     Default: arn:aws:s3:::abdelhak-e-commerce-products-images/*
@@ -37,11 +22,11 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref ProductsTable 
+              Resource: !ImportValue ProductsArn 
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
   processPayment:
     Type: AWS::Serverless::Function
     Properties:
@@ -54,21 +39,21 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:DeleteItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
                 - dynamodb:GetItem
                 - dynamodb:UpdateItem
-              Resource: !Ref PaymentsTable
+              Resource: !ImportValue PaymentsArn
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref OrdersTable
+              Resource: !ImportValue OrdersArn
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
   createOrder:
     Type: AWS::Serverless::Function
     Properties:
@@ -81,15 +66,15 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
                 - dynamodb:BatchGetItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
                 -  lambda:InvokeAsync
@@ -106,7 +91,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
                 - s3:PutObject
@@ -123,7 +108,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref UsersTable
+              Resource: !ImportValue UsersArn
   fireWorkflow:
     Type: AWS::Serverless::Function
     Properties:
@@ -152,7 +137,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
   getCart:
     Type: AWS::Serverless::Function
     Properties:
@@ -165,7 +150,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
   getOrders:
     Type: AWS::Serverless::Function
     Properties:
@@ -178,7 +163,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:Scan
-              Resource: !Ref OrdersTable
+              Resource: !ImportValue OrdersArn
   getProductById:
     Type: AWS::Serverless::Function
     Properties:
@@ -191,7 +176,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
   getUserById:
     Type: AWS::Serverless::Function
     Properties:
@@ -204,7 +189,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
-              Resource: !Ref UsersTable
+              Resource: !ImportValue UsersArn
   getUsers:
     Type: AWS::Serverless::Function
     Properties:
@@ -217,7 +202,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:Scan
-              Resource: !Ref UsersTable
+              Resource: !ImportValue UsersArn
   inventoryUpdate:
     Type: AWS::Serverless::Function
     Properties:
@@ -230,20 +215,20 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:DeleteItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
             - Effect: Allow
               Action:
                 - dynamodb:GetItem
                 - dynamodb:UpdateItem
-              Resource: !Ref OrdersTable
+              Resource: !ImportValue OrdersArn
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref ProductsTable
+              Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
                 - dynamodb:UpdateItem
-              Resource: !Ref PaymentsTable
+              Resource: !ImportValue PaymentsArn
   removeCartItem:
     Type: AWS::Serverless::Function
     Properties:
@@ -258,7 +243,7 @@ Resources:
                 - dynamodb:DeleteItem
                 - dynamodb:PutItem
                 - dynamodb:GetItem
-              Resource: !Ref CartTable
+              Resource: !ImportValue CartsArn
   registerNewUsers:
     Type: AWS::Serverless::Function
     Properties:
@@ -271,7 +256,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !Ref UsersTable
+              Resource: !ImportValue UsersArn
   authLambda:
     Type: AWS::Serverless::Function
     Properties:
@@ -284,7 +269,7 @@ Resources:
             - Effect: Allow
               Action:
                 - dynamodb:PutItem
-              Resource: !Ref UsersTable
+              Resource: !ImportValue UsersArn
             
             
 
