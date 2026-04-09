@@ -1,6 +1,6 @@
 import { SFNClient, StartExecutionCommand } from "@aws-sdk/client-sfn";
 
-const sfn = new SFNClient({ region: "eu-west-3" });
+const sfn = new SFNClient({ region: process.env.AWS_REGION });
 
 export const handler = async (event) => {
     const input = {

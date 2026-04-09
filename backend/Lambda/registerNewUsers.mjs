@@ -1,7 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { PutCommand } from "@aws-sdk/lib-dynamodb";
 
-const client = new DynamoDBClient({ region: "eu-west-3" });
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 
 export const handler = async (event) => {
     try {

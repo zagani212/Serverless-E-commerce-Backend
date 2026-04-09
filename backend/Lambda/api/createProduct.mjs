@@ -2,12 +2,12 @@ import { PutCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
-const client = new DynamoDBClient({ region: "eu-west-3" });
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 const db = DynamoDBDocumentClient.from(client);
 
 import { randomUUID } from "crypto";
 
-const s3 = new S3Client({ region: "eu-west-3" });
+const s3 = new S3Client({ region: process.env.AWS_REGION });
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME;
 

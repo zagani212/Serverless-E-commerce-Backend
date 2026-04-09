@@ -2,7 +2,7 @@
 import { GetCommand, PutCommand, DeleteCommand, DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 
-const client = new DynamoDBClient({ region: "eu-west-3" });
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 const db = DynamoDBDocumentClient.from(client);
 
 import AWSXRay from 'aws-xray-sdk';
