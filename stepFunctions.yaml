@@ -1,0 +1,174 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Resources:
+  MyStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: step-functions-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: lambda-invoke
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: [!ImportValue createOrder, !ImportValue processPayment,!ImportValue inventoryUpdate]
+  fireWorkflow:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: fireWorkflow.handler
+      CodeUri: backend/Lambda/api/fireWorkflow.mjs
+      Tracing: Active
+      Environment:
+        Variables:
+          STATE_MACHINE_ARN: !GetAtt MyStateMachine.Arn
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - states:StartExecution
+              Resource: !GetAtt MyStateMachine.Arn
+  MyStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: my-state-machine
+      RoleArn: !GetAtt MyStateMachineRole.Arn
+      DefinitionString: 
+        Fn::Sub:
+        - |
+          {
+            "Comment": "A description of my state machine",
+            "StartAt": "createOrder",
+            "States": {
+              "createOrder": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Output": "{% $states.result.Payload %}",
+                "Arguments": {
+                  "FunctionName": "${InventoryLambda}",
+                  "Payload": "{% $states.input %}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2,
+                    "JitterStrategy": "FULL"
+                  }
+                ],
+                "Next": "ProcessPayment"
+              },
+              "ProcessPayment": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Output": "{% $states.result.Payload %}",
+                "Arguments": {
+                  "FunctionName": "arn:aws:lambda:eu-west-3:775698064297:function:ProcessPayment:$LATEST",
+                  "Payload": "{% $states.input %}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2,
+                    "JitterStrategy": "FULL"
+                  }
+                ],
+                "Next": "Choice"
+              },
+              "Choice": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Next": "UpdateInventory",
+                    "Condition": "{% $states.input.body.status = 'SUCCESS' %}"
+                  }
+                ],
+                "Default": "Transaction failed"
+              },
+              "UpdateInventory": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::lambda:invoke",
+                "Output": "{% $states.result.Payload %}",
+                "Arguments": {
+                  "FunctionName": "arn:aws:lambda:eu-west-3:775698064297:function:InventoryUpdate:$LATEST",
+                  "Payload": "{% $states.input %}"
+                },
+                "Retry": [
+                  {
+                    "ErrorEquals": [
+                      "Lambda.ServiceException",
+                      "Lambda.AWSLambdaException",
+                      "Lambda.SdkClientException",
+                      "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 1,
+                    "MaxAttempts": 3,
+                    "BackoffRate": 2,
+                    "JitterStrategy": "FULL"
+                  }
+                ],
+                "Next": "Inventory is updated"
+              },
+              "Inventory is updated": {
+                "Type": "Choice",
+                "Choices": [
+                  {
+                    "Next": "Transaction failed",
+                    "Condition": "{% $states.input.error = 'Not enough stock' %}"
+                  }
+                ],
+                "Default": "Transaction successed"
+              },
+              "Transaction successed": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::sns:publish",
+                "Arguments": {
+                  "TopicArn": "arn:aws:sns:eu-west-3:775698064297:myTopic",
+                  "Message": {
+                    "subject": "Your Payment Was Successful",
+                    "message": "Hello,\n\nWe’re happy to let you know that your payment has been processed successfully.\n\nPayment Details:\n- Payment ID: 11ed782b-496e-4fb1-9c54-5d0997c0e0e2\n- Order ID: 25d5a09e-b711-42ce-8b03-d22ff0c99996\n- Status: SUCCESS\n- Attempts: 1\n- Updated At: 2026-04-06T14:34:34.465Z\n\nThank you for your purchase!"
+                  }
+                },
+                "End": true
+              },
+              "Transaction failed": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::sns:publish",
+                "Arguments": {
+                  "TopicArn": "arn:aws:sns:eu-west-3:775698064297:myTopic",
+                  "Message": {
+                    "subject": "Your Payment Failed",
+                    "message": "Hello,\n\nUnfortunately, we were unable to process your payment.\n\nPayment Details:\n- Payment ID: 11ed782b-496e-4fb1-9c54-5d0997c0e0e2\n- Order ID: 25d5a09e-b711-42ce-8b03-d22ff0c99996\n- Status: FAILED\n- Attempts: 1\n- Updated At: 2026-04-06T14:34:34.465Z\n\nPlease try again or contact support if the issue persists."
+                  }
+                },
+                "End": true
+              }
+            },
+            "QueryLanguage": "JSONata"
+          }
+        - InventoryLambda: !ImportValue inventoryUpdate
+Outputs:
+  StateMachineArn:
+    Value: !Ref MyStateMachine
+    Export:
+      Name: StateMachineArn
