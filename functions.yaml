@@ -113,8 +113,8 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:GetItem
-              Resource: !ImportValue CartsArn
+                - dynamodb:Scan
+              Resource: !ImportValue ProductsArn
   getCart:
     Type: AWS::Serverless::Function
     Properties:
@@ -262,3 +262,51 @@ Outputs:
     Value: !GetAtt inventoryUpdate.Arn
     Export:
       Name: inventoryUpdate
+  authLambda:
+    Value: !GetAtt authLambda.Arn
+    Export:
+      Name: authLambda
+  getCart:
+    Value: !GetAtt getCart.Arn
+    Export:
+      Name: getCart
+  addCreateItem:
+    Value: !GetAtt addCreateItem.Arn
+    Export:
+      Name: addCreateItem
+  removeCartItem:
+    Value: !GetAtt removeCartItem.Arn
+    Export:
+      Name: removeCartItem
+  getOrders:
+    Value: !GetAtt getOrders.Arn
+    Export:
+      Name: getOrders
+  getProductById:
+    Value: !GetAtt getProductById.Arn
+    Export:
+      Name: getProductById
+  createProduct:
+    Value: !GetAtt createProduct.Arn
+    Export:
+      Name: createProduct
+  getAllProducts:
+    Value: !GetAtt getAllProducts.Arn
+    Export:
+      Name: getAllProducts
+  getProductById:
+    Value: !GetAtt getProductById.Arn
+    Export:
+      Name: getProductById
+  getUsers:
+    Value: !GetAtt getUsers.Arn
+    Export:
+      Name: getUsers
+  editUser:
+    Value: !GetAtt editUser.Arn
+    Export:
+      Name: editUser
+  getUserById:
+    Value: !GetAtt getUserById.Arn
+    Export:
+      Name: getUserById
