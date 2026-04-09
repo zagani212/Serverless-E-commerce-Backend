@@ -1,0 +1,190 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: HTTP API Gateway with Lambda authorizer and Lambda integration
+
+Resources:
+
+  # HTTP API
+  MyHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+        AllowHeaders: 
+          - "*"
+        ExposeHeaders:  
+          - "*"
+        MaxAge: 0
+      Auth:
+        Authorizers:
+          LambdaAuth:
+            FunctionArn: !ImportValue authLambda
+            Identity:
+              ReauthorizeEverySeconds: 300
+            AuthorizerPayloadFormatVersion: 2.0
+            EnableSimpleResponses: true
+      StageName: prod
+      AccessLogSettings:
+        DestinationArn: "arn:aws:logs:eu-west-1:775698064297:log-group:api-gateway"
+        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","error":"$context.error.message"}'
+      DefinitionBody:
+        openapi: 3.0.1
+        info:
+          title: E-commerce API
+          version: '1.0'
+        paths:
+          /cart:
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetCart}/invocations
+                  - GetCart: !ImportValue getCart
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /cart/items:
+            post:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AddCreateItem}/invocations
+                  - AddCreateItem: !ImportValue addCreateItem
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /cart/items/{productId}:
+            delete:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${RemoveCartItem}/invocations
+                  - RemoveCartItem: !ImportValue removeCartItem
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /orders:
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetOrders}/invocations
+                  - GetOrders: !ImportValue getOrders
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /orders:
+            post:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${FireWorkflow}/invocations
+                  - FireWorkflow: !ImportValue fireWorkflow
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetProductById}/invocations
+                  - GetProductById: !ImportValue getProductById
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /products:
+            post:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateProduct}/invocations
+                  - CreateProduct: !ImportValue createProduct
+                payloadFormatVersion: "2.0"
+                security:
+                  - LambdaAuth: []
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetAllProducts}/invocations
+                  - GetAllProducts: !ImportValue getAllProducts
+                payloadFormatVersion: "2.0"
+                security: []     
+          /products/{id}:
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetProductById}/invocations
+                  - GetProductById: !ImportValue getProductById
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /users:
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUsers}/invocations
+                  - GetUsers: !ImportValue getUsers
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+          /users/{id}:
+            put:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EditUser}/invocations
+                  - EditUser: !ImportValue editUser
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+            get:
+              x-amazon-apigateway-integration:
+                type: aws_proxy
+                httpMethod: POST
+                uri: !Sub
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetUserById}/invocations
+                  - GetUserById: !ImportValue getUserById
+                payloadFormatVersion: "2.0"
+              security:
+                - LambdaAuth: []
+            
+        components:
+          securitySchemes:
+            LambdaAuth:
+              type: apiKey
+              name: Authorization
+              in: header
+
+  GetCartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getAllProducts
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+  ApiEndpoint:
+    Description: HTTP API endpoint
+    Value: !Sub "https://${MyHttpApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    Export:
+      Name: ApiEndpoint
