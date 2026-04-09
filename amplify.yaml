@@ -1,0 +1,70 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: GitHub repo URL (e.g. https://github.com/user/repo)
+
+  GitHubToken:
+      Type: String
+      NoEcho: true
+      Description: GitHub OAuth token
+
+  BranchName:
+    Type: String
+    Default: main
+
+Resources:
+
+  AmplifyApp:
+    Type: AWS::Amplify::App
+    Properties:
+      Name: my-amplify-app
+      Repository: !Ref GitHubRepo
+      AccessToken: !Ref GitHubToken
+
+      BuildSpec: |
+        version: 1
+        frontend:
+          phases:
+            preBuild:
+              commands:
+                - npm ci --cache .npm --prefer-offline
+            build:
+              commands:
+                - npm run build
+          artifacts:
+            baseDirectory: dist
+            files:
+              - '**/*'
+          cache:
+            paths:
+              - .npm/**/*
+
+  AmplifyBranch:
+    Type: AWS::Amplify::Branch
+    Properties:
+      AppId: !GetAtt AmplifyApp.AppId
+      BranchName: !Ref BranchName
+      EnableAutoBuild: true
+      EnvironmentVariables:
+        - Name: VITE_API_BASE_URL
+          Value: !ImportValue ApiEndpoint
+        - Name: VITE_COGNITO_CLIENT_ID
+          Value: 723thm5mml4pn6a06tedcbp8on
+        - Name: VITE_COGNITO_DOMAIN
+          Value: eu-west-3l9rvcceqp.auth.eu-west-3.amazoncognito.com
+        - Name: VITE_COGNITO_USER_POOL_ID
+          Value: eu-west-3_L9rvCCeqp
+        - Name: VITE_REDIRECT_SIGN_IN
+          Value: !GetAtt AmplifyApp.DefaultDomain
+        - Name: VITE_REDIRECT_SIGN_OUT
+          Value: !Sub
+                  - https://main.${Domain}
+                  - Domain: !GetAtt AmplifyApp.DefaultDomain
+Outputs:
+  AppId:
+    Value: !GetAtt AmplifyApp.AppId
+
+  DefaultDomain:
+    Value: !GetAtt AmplifyApp.DefaultDomain
