@@ -1,12 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Parameters:
-  BucketArn:
-    Type: String
-    Default: arn:aws:s3:::abdelhak-e-commerce-products-images/*
-  StateMachine:
-    Type: String
-    Default: arn:aws:states:eu-west-3:775698064297:stateMachine:orderWorkflow
 
 Resources:
 
@@ -95,7 +88,7 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
-              Resource: !Ref BucketArn
+              Resource: !ImportValue BucketArn
   editUser:
     Type: AWS::Serverless::Function
     Properties:
@@ -109,22 +102,6 @@ Resources:
               Action:
                 - dynamodb:UpdateItem
               Resource: !ImportValue UsersArn
-  fireWorkflow:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: nodejs24.x
-      Handler: fireWorkflow.handler
-      CodeUri: backend/Lambda/api/fireWorkflow.mjs
-      Tracing: Active
-      Environment:
-        Variables:
-          STATE_MACHINE_ARN: !Ref StateMachine
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - states:StartExecution
-              Resource: !Ref StateMachine
   getAllProducts:
     Type: AWS::Serverless::Function
     Properties:
@@ -272,18 +249,16 @@ Resources:
               Resource: !ImportValue UsersArn
             
             
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+Outputs:
+  createOrder:
+    Value: !GetAtt createOrder.Arn
+    Export:
+      Name: createOrder
+  processPayment:
+    Value: !GetAtt processPayment.Arn
+    Export:
+      Name: processPayment
+  inventoryUpdate:
+    Value: !GetAtt inventoryUpdate.Arn
+    Export:
+      Name: inventoryUpdate
