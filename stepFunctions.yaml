@@ -55,7 +55,7 @@ Resources:
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "Output": "{% $states.result.Payload %}",
                 "Arguments": {
-                  "FunctionName": "${InventoryLambda}",
+                  "FunctionName": "${CreateOrderLambda}",
                   "Payload": "{% $states.input %}"
                 },
                 "Retry": [
@@ -79,7 +79,7 @@ Resources:
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "Output": "{% $states.result.Payload %}",
                 "Arguments": {
-                  "FunctionName": "arn:aws:lambda:eu-west-3:775698064297:function:ProcessPayment:$LATEST",
+                  "FunctionName": "${ProcessPaymentLambda}",
                   "Payload": "{% $states.input %}"
                 },
                 "Retry": [
@@ -110,7 +110,7 @@ Resources:
                 "Resource": "arn:aws:states:::lambda:invoke",
                 "Output": "{% $states.result.Payload %}",
                 "Arguments": {
-                  "FunctionName": "arn:aws:lambda:eu-west-3:775698064297:function:InventoryUpdate:$LATEST",
+                  "FunctionName": "${InventoryLambda}",
                   "Payload": "{% $states.input %}"
                 },
                 "Retry": [
@@ -167,8 +167,14 @@ Resources:
             "QueryLanguage": "JSONata"
           }
         - InventoryLambda: !ImportValue inventoryUpdate
+          ProcessPaymentLambda: !ImportValue processPayment
+          CreateOrderLambda: !ImportValue createOrder
 Outputs:
   StateMachineArn:
     Value: !Ref MyStateMachine
     Export:
       Name: StateMachineArn
+  fireWorkflow:
+    Value: !GetAtt fireWorkflow.Arn
+    Export:
+      Name: fireWorkflow
