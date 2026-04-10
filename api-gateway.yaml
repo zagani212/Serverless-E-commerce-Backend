@@ -16,6 +16,7 @@ Resources:
           - POST
           - PUT
           - DELETE
+          - OPTIONS
         AllowHeaders: 
           - "*"
         ExposeHeaders:  
@@ -30,9 +31,6 @@ Resources:
             AuthorizerPayloadFormatVersion: 2.0
             EnableSimpleResponses: true
       StageName: prod
-      AccessLogSettings:
-        DestinationArn: "arn:aws:logs:eu-west-1:775698064297:log-group:api-gateway"
-        Format: '{"requestId":"$context.requestId","ip":"$context.identity.sourceIp","requestTime":"$context.requestTime","httpMethod":"$context.httpMethod","routeKey":"$context.routeKey","status":"$context.status","error":"$context.error.message"}'
       DefinitionBody:
         openapi: 3.0.1
         info:
@@ -73,17 +71,6 @@ Resources:
               security:
                 - LambdaAuth: []
           /orders:
-            get:
-              x-amazon-apigateway-integration:
-                type: aws_proxy
-                httpMethod: POST
-                uri: !Sub
-                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetOrders}/invocations
-                  - GetOrders: !ImportValue getOrders
-                payloadFormatVersion: "2.0"
-              security:
-                - LambdaAuth: []
-          /orders:
             post:
               x-amazon-apigateway-integration:
                 type: aws_proxy
@@ -99,8 +86,8 @@ Resources:
                 type: aws_proxy
                 httpMethod: POST
                 uri: !Sub
-                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetProductById}/invocations
-                  - GetProductById: !ImportValue getProductById
+                  - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${GetOrders}/invocations
+                  - GetOrders: !ImportValue getOrders
                 payloadFormatVersion: "2.0"
               security:
                 - LambdaAuth: []
@@ -113,8 +100,8 @@ Resources:
                   - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${CreateProduct}/invocations
                   - CreateProduct: !ImportValue createProduct
                 payloadFormatVersion: "2.0"
-                security:
-                  - LambdaAuth: []
+              security:
+                - LambdaAuth: []
             get:
               x-amazon-apigateway-integration:
                 type: aws_proxy
@@ -175,11 +162,77 @@ Resources:
               name: Authorization
               in: header
 
-  GetCartPermission:
+  GetAllProductsPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !ImportValue getAllProducts
+      Principal: apigateway.amazonaws.com
+  GetCartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getCart
+      Principal: apigateway.amazonaws.com
+  AuthPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue authLambda
+      Principal: apigateway.amazonaws.com
+  AddCreateItemPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue addCreateItem
+      Principal: apigateway.amazonaws.com
+  RemoveCartItemPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue removeCartItem
+      Principal: apigateway.amazonaws.com
+  GetProductByIdPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getProductById
+      Principal: apigateway.amazonaws.com
+  GetOrdersPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getOrders
+      Principal: apigateway.amazonaws.com
+  FireWorkflowPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue fireWorkflow
+      Principal: apigateway.amazonaws.com
+  CreateProductPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue createProduct
+      Principal: apigateway.amazonaws.com
+  GetUsersPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getUsers
+      Principal: apigateway.amazonaws.com
+  GetUserByIdPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue getUserById
+      Principal: apigateway.amazonaws.com
+  EditUserPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !ImportValue editUser
       Principal: apigateway.amazonaws.com
 
 Outputs:

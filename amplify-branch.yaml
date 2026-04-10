@@ -1,0 +1,33 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  BranchName:
+    Type: String
+    Default: main
+
+Resources:
+  AmplifyBranch:
+      Type: AWS::Amplify::Branch
+      Properties:
+        AppId: !ImportValue AppId
+        BranchName: !Ref BranchName
+        EnableAutoBuild: true
+        EnvironmentVariables:
+          - Name: VITE_API_BASE_URL
+            Value: !ImportValue ApiEndpoint
+          - Name: VITE_COGNITO_CLIENT_ID
+            Value: !ImportValue UserPoolClientId
+          - Name: VITE_COGNITO_DOMAIN
+            Value: !Sub
+                    - ${Domain}.auth.${AWS::Region}.amazoncognito.com
+                    - Domain: !ImportValue UserPoolDomain
+          - Name: VITE_COGNITO_USER_POOL_ID
+            Value: !ImportValue UserPoolId
+          - Name: VITE_REDIRECT_SIGN_IN
+            Value: !Sub
+                    - https://main.${Domain}/
+                    - Domain: !ImportValue DefaultDomain
+          - Name: VITE_REDIRECT_SIGN_OUT
+            Value: !Sub
+                    - https://main.${Domain}/
+                    - Domain: !ImportValue DefaultDomain

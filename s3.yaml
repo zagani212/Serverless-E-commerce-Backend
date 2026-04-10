@@ -1,15 +1,31 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Parameters:
-  BucketName:
-    Type: String
 
 Resources:
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Ref BucketName
+      BucketName: !Sub "my-bucket-${AWS::AccountId}-${AWS::Region}"
+      PublicAccessBlockConfiguration: 
+          BlockPublicAcls: false
+          BlockPublicPolicy: false
+          IgnorePublicAcls: false
+          RestrictPublicBuckets: false
       VersioningConfiguration:
         Status: Enabled
+
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MyBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource: !Sub "arn:aws:s3:::${MyBucket}/*"
+            Principal: '*'
+
 
 Outputs:
   BucketArn:

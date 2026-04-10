@@ -58,16 +58,16 @@ Resources:
         - Statement:
             - Effect: Allow
               Action:
-                - dynamodb:GetItem
-              Resource: !ImportValue ProductsArn
-            - Effect: Allow
-              Action:
                 - dynamodb:BatchGetItem
               Resource: !ImportValue ProductsArn
             - Effect: Allow
               Action:
+                - dynamodb:GetItem
+              Resource: !ImportValue CartsArn
+            - Effect: Allow
+              Action:
                 - dynamodb:PutItem
-              Resource: !ImportValue ProductsArn
+              Resource: !ImportValue OrdersArn
             - Effect: Allow
               Action:
                 -  lambda:InvokeAsync
@@ -79,6 +79,9 @@ Resources:
       Handler: createProduct.handler
       CodeUri: backend/Lambda/api/createProduct.mjs
       Tracing: Active
+      Environment:
+        Variables:
+          BUCKET_NAME: !Sub "my-bucket-${AWS::AccountId}-${AWS::Region}"
       Policies:
         - Statement:
             - Effect: Allow
@@ -88,7 +91,9 @@ Resources:
             - Effect: Allow
               Action:
                 - s3:PutObject
-              Resource: !ImportValue BucketArn
+              Resource: !Sub
+                          - "${Bucket}/*"
+                          - Bucket: !ImportValue BucketArn 
   editUser:
     Type: AWS::Serverless::Function
     Properties:
@@ -221,32 +226,7 @@ Resources:
                 - dynamodb:PutItem
                 - dynamodb:GetItem
               Resource: !ImportValue CartsArn
-  registerNewUsers:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: nodejs24.x
-      Handler: registerNewUsers.handler
-      CodeUri: backend/Lambda/registerNewUsers.mjs
-      Tracing: Active
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-              Resource: !ImportValue UsersArn
-  authLambda:
-    Type: AWS::Serverless::Function
-    Properties:
-      Runtime: nodejs24.x
-      Handler: index.handler
-      CodeUri: zip/auth-lambda.zip
-      Tracing: Active
-      Policies:
-        - Statement:
-            - Effect: Allow
-              Action:
-                - dynamodb:PutItem
-              Resource: !ImportValue UsersArn
+  
             
             
 Outputs:
@@ -262,10 +242,6 @@ Outputs:
     Value: !GetAtt inventoryUpdate.Arn
     Export:
       Name: inventoryUpdate
-  authLambda:
-    Value: !GetAtt authLambda.Arn
-    Export:
-      Name: authLambda
   getCart:
     Value: !GetAtt getCart.Arn
     Export:
@@ -310,3 +286,4 @@ Outputs:
     Value: !GetAtt getUserById.Arn
     Export:
       Name: getUserById
+  

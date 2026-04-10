@@ -11,4 +11,4 @@ parameter_overrides = "CodeBucket=\"cloudfromation-bucket-abdelhak-e-commerce \"
 image_repositories = []
 
 [default.global.parameters]
-region = "eu-west-1"
+region = "eu-central-1"
