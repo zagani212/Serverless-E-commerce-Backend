@@ -3,7 +3,7 @@ import jwkToPem from "jwk-to-pem";
 import axios from "axios";
 
 
-const REGION = process.env.REGION;
+const REGION = process.env.AWS_REGION;
 const USER_POOL_ID = process.env.USER_POOL_ID;
 
 let pems = null;
