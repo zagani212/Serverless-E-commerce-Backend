@@ -1,0 +1,132 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cognito User Pool with client and domain
+
+Resources:
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: eCommerceUserPool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      LambdaConfig:
+        PostConfirmation: !GetAtt registerNewUsers.Arn
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      MfaConfiguration: "OFF"
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: eCommerceClient
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      SupportedIdentityProviders:
+        - COGNITO
+      CallbackURLs: 
+        - !Sub
+          - https://main.${Domain}/
+          - Domain: !ImportValue DefaultDomain
+      LogoutURLs:
+        - !Sub
+          - https://main.${Domain}/
+          - Domain: !ImportValue DefaultDomain
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - email
+        - aws.cognito.signin.user.admin
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      RefreshTokenValidity: 30
+      PreventUserExistenceErrors: ENABLED
+      SupportedIdentityProviders:
+        - COGNITO
+
+  CognitoUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub "spa-${AWS::Region}-${AWS::AccountId}"
+      UserPoolId: !Ref CognitoUserPool
+
+  GetCartPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt registerNewUsers.Arn
+      Principal: cognito-idp.amazonaws.com
+
+  authLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: index.handler
+      CodeUri: zip/auth-lambda.zip
+      Tracing: Active
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref CognitoUserPool
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !ImportValue UsersArn
+  registerNewUsers:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: nodejs24.x
+      Handler: registerNewUsers.handler
+      CodeUri: backend/Lambda/registerNewUsers.mjs
+      Tracing: Active
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource: !ImportValue UsersArn
+
+Outputs:
+
+  UserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: UserPoolId
+
+  UserPoolClientId:
+    Description: Cognito User Pool Client ID
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: UserPoolClientId
+
+  UserPoolDomain:
+    Description: Cognito User Pool Domain
+    Value: !Sub "spa-${AWS::Region}-${AWS::AccountId}"
+    Export:
+      Name: UserPoolDomain
+
+  authLambda:
+    Value: !GetAtt authLambda.Arn
+    Export:
+      Name: authLambda
+  registerNewUsers:
+    Value: !GetAtt registerNewUsers.Arn
+    Export:
+      Name: registerNewUsers
