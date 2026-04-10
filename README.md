@@ -47,6 +47,7 @@ This project follows a serverless architecture on AWS. The system is cost-effect
 ### 1. Frontend Delivery and CI/CD
 
 - Frontend code is pushed to GitHub.
+- Frontend repository: https://github.com/zagani212/amplify_app.git
 - The repository is connected to AWS Amplify.
 - A webhook notifies Amplify after each commit.
 - Amplify builds and deploys the frontend automatically, without manual developer intervention.
@@ -101,7 +102,7 @@ Infrastructure provisioning is done with AWS SAM + CloudFormation templates.
 
 - AWS CLI installed and configured
 - AWS SAM CLI installed
-- Access to a GitHub repository containing the frontend code
+- Access to the frontend GitHub repository: https://github.com/zagani212/amplify_app.git
 
 ### Generate a GitHub Token for Amplify
 
