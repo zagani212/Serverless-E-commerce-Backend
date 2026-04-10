@@ -5,16 +5,12 @@ import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 const db = DynamoDBDocumentClient.from(client);
 
-import AWSXRay from 'aws-xray-sdk';
-import aws from 'aws-sdk';
-const AWS = AWSXRay.captureAWS(aws);
-
 export const handler = async (event) => {
     const userId = event.headers["x-user-id"];
     const { productId } = event.pathParameters;
 
     const cartData = await db.send(new GetCommand({
-        TableName: "Cart",
+        TableName: "Carts",
         Key: { userId }
     }));
 
@@ -28,7 +24,7 @@ export const handler = async (event) => {
 
     if (Object.keys(cartData.Item.articles).length == 0) {
         await db.send(new DeleteCommand({
-            TableName: "Cart",
+            TableName: "Carts",
             Key: { userId }
         }));
         return {
@@ -42,7 +38,7 @@ export const handler = async (event) => {
     };
 
     await db.send(new PutCommand({
-        TableName: "Cart",
+        TableName: "Carts",
         Item: updatedCart
     }));
 

@@ -12,7 +12,7 @@ export const handler = async (event) => {
     let ERROR = ""
 
     const cart = await db.send(new GetCommand({
-        TableName: "Cart",
+        TableName: "Carts",
         Key: { userId }
     }));
 

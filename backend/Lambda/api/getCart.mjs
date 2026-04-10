@@ -6,17 +6,22 @@ const client = new DynamoDBClient({ region: process.env.AWS_REGION });
 const db = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
-    const userId = event.headers["x-user-id"];
-
-    if (!userId) {
-        return {
-            statusCode: 400,
-            body: JSON.stringify({ error: "Missing x-user-id header" })
-        };
+    let userId = null
+    try{
+        userId = event.headers["x-user-id"];       
+    }finally{
+        if (!userId) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ error: "Missing x-user-id header" })
+            };
+        }
     }
 
+    
+
     const data = await db.send(new GetCommand({
-        TableName: "Cart",
+        TableName: "Carts",
         Key: { userId }
     }));
 

@@ -28,7 +28,7 @@ export const handler = async (event) => {
     }
 
     await db.send(new UpdateCommand({
-        TableName: "Cart",
+        TableName: "Carts",
         Key: { userId },
         UpdateExpression: 'SET articles = if_not_exists(articles, :emptyMap), expires_at = :expireTime',
         ExpressionAttributeValues: { ":emptyMap": {}, ":expireTime": Math.floor(Date.now() / 1000) + (60 * 60) }
@@ -36,7 +36,7 @@ export const handler = async (event) => {
 
     const result = await db.send(
         new UpdateCommand({
-            TableName: "Cart",
+            TableName: "Carts",
             Key: { userId },
             UpdateExpression: `
         SET articles.#id = if_not_exists(articles.#id, :zero) + :qty

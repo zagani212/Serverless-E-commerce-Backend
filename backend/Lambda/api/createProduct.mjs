@@ -9,7 +9,7 @@ import { randomUUID } from "crypto";
 
 const s3 = new S3Client({ region: process.env.AWS_REGION });
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const BUCKET_NAME = process.env.BUCKET_NAME;
 
 export const handler = async (event) => {
     try {
@@ -40,7 +40,7 @@ export const handler = async (event) => {
             );
         }
 
-        const imageUrl = `https://${BUCKET_NAME}.s3.eu-west-3.amazonaws.com/${productId}`;
+        const imageUrl = `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${productId}`;
 
         const product = {
             productId,

@@ -42,7 +42,7 @@ export const handler = async (event) => {
                 },
                 {
                     Delete: {
-                        TableName: "Cart",
+                        TableName: "Carts",
                         Key: { userId: order.Item.userId },
                     }
                 },
