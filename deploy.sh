@@ -9,7 +9,7 @@ sam deploy \
     --capabilities CAPABILITY_NAMED_IAM \
     --parameter-overrides \
     GitHubToken=YOUR_GITHUB_TOKEN \
-    GitHubRepo=YOUR_ITHUB_REPO \
+    GitHubRepo=YOUR_GITHUB_REPO \
     --no-confirm-changeset
 
 sam deploy --template-file templates/cognito.yaml --stack-name cognito-stack --no-confirm-changeset
