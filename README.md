@@ -148,6 +148,19 @@ bash deploy.sh
 
 The script provisions all required components (storage, database, auth, functions, workflow, API, and Amplify branch).
 
+### Manual Frontend Deployment (Required)
+
+After all backend stacks are deployed successfully, deploy the frontend manually from the AWS Amplify console:
+
+1. Open AWS Amplify in the AWS Console.
+2. Select your connected frontend app.
+3. Open the target branch.
+4. Click **Deploy** (or **Redeploy this version**) to trigger the frontend deployment.
+
+Important:
+- Stack deployment does not automatically publish the frontend build in this setup.
+- The application is fully available only after this manual Amplify deploy completes.
+
 ### Delete All AWS Services
 
 To tear down resources, edit delete.sh first:

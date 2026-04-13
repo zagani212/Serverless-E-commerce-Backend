@@ -1,5 +1,7 @@
 .delete.sh
 .deploy.sh
 
+samconfig.toml
+
 markers.json
 versions.json

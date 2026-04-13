@@ -77,7 +77,7 @@ Resources:
     Properties:
       Runtime: nodejs24.x
       Handler: index.handler
-      CodeUri: zip/auth-lambda.zip
+      CodeUri: ../zip/auth-lambda.zip
       Tracing: Active
       Environment:
         Variables:
