@@ -93,7 +93,7 @@ Resources:
     Properties:
       Runtime: nodejs24.x
       Handler: registerNewUsers.handler
-      CodeUri: backend/Lambda/registerNewUsers.mjs
+      CodeUri: ../backend/Lambda/registerNewUsers.mjs
       Tracing: Active
       Policies:
         - Statement:
