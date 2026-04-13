@@ -27,6 +27,9 @@ Resources:
       Handler: processPayment.handler
       CodeUri: backend/Lambda/api/processPayment.mjs
       Tracing: Active
+      Environment:
+        Variables:
+          SUCCESS_PROBABILITTY: 0.8
       Policies:
         - Statement:
             - Effect: Allow
